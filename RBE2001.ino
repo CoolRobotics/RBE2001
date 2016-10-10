@@ -73,7 +73,7 @@ void setup() {
   rightMotor.attach(10);
   armMotor.attach(9);    // new
 
-  action = followLineBackwardAction;
+  action = followLineBackwardAction; // first action
 }
 
 /**
@@ -196,4 +196,40 @@ bool isFollowLineFinished() {
 //void stopArm() {
 //  if (
 //}
+
+
+void testArm() {  // test arm motor with height limit switches (no fail safe)
+  bool upperSwitch = digitalRead(upperArmLimitSwitchPin);
+  bool lowerSwitch = digitalRead(lowerArmLimitSwitchPin);
+  
+  // set the arm down if arm is floating between limit switches
+  if (lowerSwitch == HIGH && upperSwitch == HIGH) {
+    while (lowerSwitch == HIGH && upperSwitch == HIGH) {
+      armMotor.write(100); // lower arm slowly
+      Serial.println("LOWER");
+    }
+  }
+  
+  delay(2000);
+  
+  // raise and lower arm once
+  if (lowerSwitch == LOW) {
+    armMotor.write(90); // stop motor
+    Serial.println("STOP!");
+    delay(2000);  // preference delay inbetween transisitions
+    while (upperSwitch == HIGH) {
+      armMotor.write(80); // raise arm slowly
+      Serial.println("RAISE");
+    }
+    if (upperSwitch == LOW) {
+      armMotor.write(90); 
+      Serial.println("STOP!");
+      delay(2000);
+      while (lowerSwitch == HIGH) {
+        armMotor.write(100);  // lower arm slowly
+        Serial.println("LOWER");
+      } //while
+    } //if
+  } //if
+} //testArm()
 
