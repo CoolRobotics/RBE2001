@@ -2,25 +2,27 @@
 #include <Encoder.h>
 #include "Arduino.h"
 #include "Messages.h"
-#include "LCD.h"
 #include "LineFollower.h"
 #include "RBE2001.h"
 
-// initialize the LCD
-LCD lcd;
 
 Messages msg;
 unsigned long timeForHeartbeat;
-int leftLineTrackerPin = 22;
-int centerLineTrackerPin = 23;
-int rightLineTrackerPin = 24;
-int horizontalLineTrackerPin = 25;
-int upperArmLimitSwitchPin = 26;  // NEW !!!
-int lowerArmLimitSwitchPin = 27;  // NEW !!!
+int frontLineTrackerPin = 29;
 
-int oldDegree; //new
+int rightMostLineTrackerPin = 7;
+int rightMoreLineTrackerPin = 28;
+int rightLineTrackerPin = 27;
 
-// NEW !!!
+int leftLineTrackerPin = 26;
+int leftMoreLineTrackerPin = 25;
+int leftMostLineTrackerPin = 6;
+
+//int upperArmLimitSwitchPin = 26;
+//int lowerArmLimitSwitchPin = 27;  // NEW !!!
+
+int oldDegree;
+
 // Interrupts
 int leftEncoderPin1 = 2; // All four encoder wires (left and right) are in interrupts
 int leftEncoderPin2 = 3;
@@ -61,17 +63,19 @@ void setup() {
   Serial.println("Starting");
   msg.setup();
   timeForHeartbeat = millis() + 1000;
-  // Initialize LCD screen with 2 rows and 16 columns
-  lcd = LCD();
-  pinMode(leftLineTrackerPin, INPUT);
-  pinMode(centerLineTrackerPin, INPUT);
-  pinMode(rightLineTrackerPin, INPUT);
-  pinMode(horizontalLineTrackerPin, INPUT);
+  pinMode(frontLineTrackerPin, INPUT);
 
-  // Initialize motors
+  pinMode(leftMostLineTrackerPin, INPUT);
+  pinMode(leftMoreLineTrackerPin, INPUT);
+  pinMode(leftLineTrackerPin, INPUT);
+
+  pinMode(rightLineTrackerPin, INPUT);
+  pinMode(rightMoreLineTrackerPin, INPUT);
+  pinMode(rightMostLineTrackerPin, INPUT);
+  //
+  //  // Initialize motors
   leftMotor.attach(11);
   rightMotor.attach(10);
-  armMotor.attach(9);    // new
 
   action = followLineBackwardAction;
 }
@@ -93,11 +97,9 @@ void loop() {
     switch (msg.getMessageType()) {
       case Messages::kStopMovement:
         // Received "Stop" message
-        lcd.print(1, "Stop");
         break;
       case Messages::kResumeMovement:
         // Received "Resume" message
-        lcd.print(1, "Resume");
         break;
     }
   }
@@ -106,16 +108,15 @@ void loop() {
     timeForHeartbeat = millis() + 1000;
     msg.sendHeartbeat();
   }
-
   switch (action) {
     case followLineBackwardAction:
       followLine(backwardDirection);
-      if (isFollowLineFinished()) {
-        Serial.println("Backward");
-        delay(1000);
-        oldDegree = leftWheelEncoder.read(); // new
-        action = rotateNintyDegreesAction;
-      }
+      //      if (isFollowLineFinished()) {
+      //        Serial.println("Backward");
+      //        delay(1000);
+      //        oldDegree = leftWheelEncoder.read(); // new
+      //        action = rotateNintyDegreesAction;
+      //      }
       break;
     case followLineForwardAction:
       Serial.println("Forward");
@@ -129,40 +130,72 @@ void loop() {
 }
 
 void followLine(Direction direction) {
+
+
+  int front = digitalRead(frontLineTrackerPin);
+
+  int leftMost = digitalRead(leftMostLineTrackerPin);
+  int leftMore = digitalRead(leftMoreLineTrackerPin);
   int left = digitalRead(leftLineTrackerPin);
-  int center = digitalRead(centerLineTrackerPin);
+
   int right = digitalRead(rightLineTrackerPin);
+  int rightMore = digitalRead(rightMoreLineTrackerPin);
+  int rightMost = digitalRead(rightMostLineTrackerPin);
+
+  Serial.print(front);
+  Serial.print(" ");
+
+  Serial.print(leftMost);
+  Serial.print(" ");
+
+  Serial.print(leftMore);
+  Serial.print(" ");
+
+  Serial.print(left);
+  Serial.print(" ");
+
+  Serial.print(right);
+  Serial.print(" ");
+
+  Serial.print(rightMore);
+  Serial.print(" ");
+
+  Serial.print(rightMost);
+  Serial.println(" ");
+
+
+
 
   if (left == HIGH && right == LOW) {
-    //    if (direction == backwardDirection) {
-    leftMotor.write(105);
-    rightMotor.write(85);
-    //    } else {
-    //      leftMotor.write(75);
-    //      rightMotor.write(90);
-    //    }
-
+    leftMotor.write(90);
+    rightMotor.write(75);
   } else if (left == LOW && right == HIGH) {
-    //     if (direction == backwardDirection) {
-    leftMotor.write(85);
-    rightMotor.write(105);
-    //     } else {
-    //      leftMotor.write(90);
-    //    rightMotor.write(75);
-    //     }
-  } if ((left == HIGH && right == HIGH) || center == HIGH) {
-    if (direction == backwardDirection) {
-      leftMotor.write(75);
-      rightMotor.write(75);
-    } else {
-      leftMotor.write(105);
-      rightMotor.write(105);
+    leftMotor.write(75);
+    rightMotor.write(90);
+  } else if (left == LOW && right == LOW) {
+    if (leftMore == HIGH && rightMore == LOW) {
+      leftMotor.write(90);
+      rightMotor.write(60);
+    } else if (leftMore == LOW && rightMore == HIGH) {
+      leftMotor.write(60);
+      rightMotor.write(90);
+    } else if (leftMore == LOW && rightMore == LOW) {
+      if (leftMost == HIGH && rightMost == LOW) {
+        leftMotor.write(90);
+        rightMotor.write(43);
+      } else if (leftMost == LOW && rightMost == HIGH) {
+        leftMotor.write(43);
+        rightMotor.write(90);
+      } else {
+        leftMotor.write(80);
+        rightMotor.write(80);
+      }
     }
   }
 }
 
 void turnNintyDegrees() {
-  int newDegree = leftWheelEncoder.read();  
+  int newDegree = leftWheelEncoder.read();
   int differenceDegree = oldDegree - newDegree;
   if (abs(differenceDegree) < 200) { //246
     Serial.print(oldDegree);
@@ -181,16 +214,16 @@ void turnNintyDegrees() {
   }
 }
 
-bool isFollowLineFinished() {
-  return digitalRead(horizontalLineTrackerPin) == HIGH;
-}
+//bool isFollowLineFinished() {
+//  return digitalRead(horizontalLineTrackerPin) == HIGH;
+//}
 
 //void raiseArm() {
 //  armMotor.write
 //}
 //
 //void lowerArm() {
-//  
+//
 //}
 //
 //void stopArm() {
