@@ -229,7 +229,6 @@ void MovementController::goBackward() {
 
 bool MovementController::isReachingContainer() {
   bool containerVal = digitalRead(frontLimitSwitchPin);
-  Serial.println(containerVal);
   return containerVal == LOW;
 }
 

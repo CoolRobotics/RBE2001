@@ -28,6 +28,7 @@
 //Messages msg;
 unsigned long timeForHeartbeat;
 MovementController mvCtrl;
+ArmController armCtrl;
 
 // Keep track of current action
 Action action;
@@ -40,13 +41,13 @@ void setup() {
   Serial.println("Starting");
 
   // Initialize the line follower
-  mvCtrl = MovementController();
   mvCtrl.setup();
+  armCtrl.setup();
 
   // Update our Field Element variables with the status of the field
   //  fieldStatus();
 
-  action = leaveReactorAction; // first action
+  action = releaseAction; // first action
 }
 
 /**
@@ -210,6 +211,7 @@ void robotMain() {
         crossCount++;
       } else if (mvCtrl.isCross() && crossCount > 0)  {
         mvCtrl.initRotation(MovementController::LEFT_DIRECTION);
+        Serial.println("++++++++++++");
         action = rotateRightNintyAction;
       }
       else mvCtrl.followLine();
@@ -253,9 +255,36 @@ void robotMain() {
         action = nextNextFollowLineAction;
       } else mvCtrl.rotateCCW();
       break;
-   case nextNextFollowLineAction:
+    case nextNextFollowLineAction:
       mvCtrl.followLine();
       break;
+    case dropDownArmAction:
+      if (armCtrl.isDropDownFinish()) {
+        armCtrl.stablize();
+        action = grabAction;
+      } else armCtrl.dropDown();
+      break;
+
+    case grabAction:
+      if (armCtrl.isGrabFinished()) {
+        delay(1000);
+        action = liftUpAction;
+      } else armCtrl.grab();
+      break;
+    case releaseAction:
+      if (armCtrl.isReleaseFinished()) {
+        action = dropDownArmAction;
+      } else armCtrl.release();
+      break;
+    case liftUpAction:
+      if (armCtrl.isLiftedUp()) {
+        delay(1000);
+        action = leaveReactorAction;
+      } else armCtrl.liftUp();
+      break;
+      case rotateDownGraberAction:
+        armCtrl.rotateDownGraber();
+        break;
   }
 }
 

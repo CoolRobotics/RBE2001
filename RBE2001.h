@@ -8,7 +8,11 @@ typedef enum { followLineAction,
                nextFollowLineAction,
                backToLineAction,
                nextNextFollowLineAction,
-               
+               dropDownArmAction,
+               grabAction,
+               releaseAction,
+               liftUpAction,
+               rotateDownGraberAction,
              } Action;
 
 typedef enum { forwardDirection,
