@@ -2,6 +2,7 @@
 //#include "Arduino.h"
 //#include "Messages.h"
 #include "MovementController.h"
+#include "ArmController.h"
 #include "RBE2001.h"
 
 
@@ -45,7 +46,7 @@ void setup() {
   // Update our Field Element variables with the status of the field
   //  fieldStatus();
 
-  action = goBackwardAction; // first action
+  action = leaveReactorAction; // first action
 }
 
 /**
@@ -188,9 +189,9 @@ int crossCount = 0;
 
 void robotMain() {
   switch (action) {
-    case goBackwardAction:
+    case leaveReactorAction:
       if (mvCtrl.isFrontCross()) {
-        mvCtrl.initRotation();
+        mvCtrl.initRotation(MovementController::LEFT_DIRECTION);
         action = rotateOneEightyAction;
       } else {
         mvCtrl.goBackward();
@@ -205,26 +206,54 @@ void robotMain() {
       else mvCtrl.rotateCCW();
       break;
     case followLineAction:
-      Serial.println("FollowLine");
       if (mvCtrl.isFrontCross()) {
         crossCount++;
-        mvCtrl.goStraightLine();
       } else if (mvCtrl.isCross() && crossCount > 0)  {
-        mvCtrl.stop();
-        mvCtrl.initRotation();
-        action = rotateLeftNintyAction;
+        mvCtrl.initRotation(MovementController::LEFT_DIRECTION);
+        action = rotateRightNintyAction;
       }
       else mvCtrl.followLine();
       break;
     case rotateLeftNintyAction:
-      if (mvCtrl.isRotationDone(90))
+      if (mvCtrl.isNintyDone(MovementController::LEFT_DIRECTION))
       {
         crossCount = 0;
-        mvCtrl.stop();
+        action = nextFollowLineAction;
+      } else mvCtrl.rotateCCW();
+      break;
+    case rotateRightNintyAction:
+      if (mvCtrl.isNintyDone(MovementController::RIGHT_DIRECTION))
+      {
+        crossCount = 0;
         action = nextFollowLineAction;
       } else mvCtrl.rotateCW();
       break;
     case nextFollowLineAction:
+      if (mvCtrl.isReachingContainer()) {
+        delay(5000);
+        action = leaveContainerAction;
+      } else {
+        mvCtrl.followLine();
+      }
+      break;
+    case leaveContainerAction:
+      if (mvCtrl.isCross()) {
+        mvCtrl.initRotation(MovementController::RIGHT_DIRECTION);
+        mvCtrl.stop();
+        action = backToLineAction;
+      } else {
+        mvCtrl.goBackward();
+      }
+      break;
+
+    case backToLineAction:
+      if (mvCtrl.isNintyDone(MovementController::LEFT_DIRECTION))
+      {
+        crossCount = 0;
+        action = nextNextFollowLineAction;
+      } else mvCtrl.rotateCCW();
+      break;
+   case nextNextFollowLineAction:
       mvCtrl.followLine();
       break;
   }

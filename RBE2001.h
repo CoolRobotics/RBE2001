@@ -1,8 +1,14 @@
 typedef enum { followLineAction,
-               goBackwardAction,
+               leaveReactorAction,
+               leaveContainerAction,
                rotateOneEightyAction,
                rotateLeftNintyAction,
-               nextFollowLineAction
+               rotateRightNintyAction,
+               rotateLeftBackAction,
+               nextFollowLineAction,
+               backToLineAction,
+               nextNextFollowLineAction,
+               
              } Action;
 
 typedef enum { forwardDirection,
