@@ -23,45 +23,17 @@ void ActionController::setup() {
   lcdCtrl.setup();
 
   currActionStage = nextActionStage;
+}
 
-  // Default start from reactor B
-  currLoc.set(Location::supply, 2);
-  dest.set(Location::reactorB, 1);
+void ActionController::start(Location::Target t, int n) {
+  dest.set(t, n);
+}
 
+void ActionController::to(Location::Target t, int n) {
+  currLoc.set(dest.target, dest.num);
+  dest.set(t, n);
   addActionsToDest();
-
-  //  // Generate queue of action
-  //  addGrabFromReactorAtions();
-  //  addLeaveReactorToFieldAtions();
-  //
-  //  // Go to the first container
-  //  actions.push(rotateLeftNintyAction);
-  //  actions.push(followLineToContainerAction);
-  //
-  //  // Release rod
-  //  actions.push(releaseAction);
-  //
-  //  // Leave the first container
-  //  actions.push(leaveContainerAction);
-  //  actions.push(rotateRightNintyAction);
-  //
-  //  // Go the to the second container
-  //  actions.push(followLineAction);
-  //  actions.push(rotateRightNintyAction);
-  //  actions.push(followLineToContainerAction);
-  //
-  //  // Grab
-  //  actions.push(grabAction);
-  //
-  //  // Leave the second container
-  //  actions.push(leaveContainerAction);
-  //  actions.push(rotateLeftNintyAction);
-  //
-  //  // Go to reactor
-  //  addFromFieldToReactorActions();
-  //
-  //  // Release rod at reactor
-  //  addReleaseAtReactorActions();
+  
 }
 
 void ActionController::addFollowLines(int n) {
@@ -248,7 +220,7 @@ void ActionController::act() {
       if (!actions.isEmpty()) {
         currAction = actions.pop();
         currActionStage = initActionStage;
-      } else currLoc = dest;
+      } else currLoc.set(dest.target, dest.num);
       break;
     case initActionStage:
       currAction.init(&mvCtrl, &armCtrl, &grabberCtrl);
@@ -416,7 +388,7 @@ RotateRightNintyEdgeAction::RotateRightNintyEdgeAction() {
   };
 }
 
-followLineToContainerAction::FollowLineToContainerAction() {
+FollowLineToContainerAction::FollowLineToContainerAction() {
   init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
     Serial.println("FollowLineToContainerAction init");
   };

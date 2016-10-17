@@ -125,6 +125,8 @@ class ActionController {
   public:
     void setup();
     void act();
+    void start(Location::Target t, int n);
+    void to(Location::Target t, int n);
 
   private:
     typedef enum {
