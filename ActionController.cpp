@@ -26,6 +26,8 @@ void ActionController::setup() {
 }
 
 void ActionController::start(Location::Target t, int n) {
+  if(t == Location::reactorA || t == Location::reactorB)
+    actions.push(followLineToContainerAction);
   dest.set(t, n);
 }
 
