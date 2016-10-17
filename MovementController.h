@@ -12,19 +12,23 @@ class MovementController {
     void followLine();
     void rotateCW();
     void rotateCCW();
-    bool isFrontCross();
-    bool isCross();
+    bool isFrontCross(int num);
+    bool hasFrontCross();
+    bool isCross(int num);
     bool isRotationDone(int dstDegree);
     void initRotation(Direction direction);
     void initLineCounter();
     void goBackward();
-    void stop();
     bool isLine();
     void goStraightLine();
     void followLineWeak();
     bool isNintyDone(Direction direction);
+    bool isNintyDoneEdge(Direction direction);
+    int isNintyDoneShare(Direction direction);
     bool isReachingContainer();
-    void initCrossDetection();
+    void initFrontLineCounter();
+    void stop();
+    bool MovementController::isStopped();
 
   private:
     // motors
@@ -35,6 +39,10 @@ class MovementController {
 
     int oldColor;
     int numLinePassed;
+
+    int frontLeftOldColor;
+    int frontRightOldColor;
+    int numFrontLinePassed;
 
     // left side
     int leftMostLineTrackerPin;
@@ -47,7 +55,7 @@ class MovementController {
     int rightMoreLineTrackerPin;
     int rightLineTrackerPin;
     int rightCrossLineTrackerPin;
-
+    
     // limit switch
     int frontLimitSwitchPin;
 };

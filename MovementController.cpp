@@ -1,9 +1,7 @@
 #include <Servo.h>
-#include "Arduino.h"
 #include "MovementController.h"
 
 Encoder leftEncoder(2, 3);
-//Encoder rightEncoder(18, 19);
 
 MovementController::MovementController() {
 }
@@ -47,62 +45,6 @@ void MovementController::setup() {
   rightMotor.attach(10);
 }
 
-/**
-
-   L1 R1
-   L2 R2
-
-   L1 = left back sensor
-
-
-   00   drive straight
-   00
-
-   00      error or turn right
-   01
-
-   00      error or turn left
-   10
-
-   00      error
-   11
-
-   01      error or turn right
-   00
-
-   01    merge right slowly
-   01
-
-   01      error
-   10
-
-   01    turn left
-   11
-
-   10      error turn right
-   00
-
-   10      error or drive back and use front sensors
-   01
-
-   10    merge left slowly
-   10
-
-   10    turn right
-   11
-
-   11      error
-   00
-
-   11    turn left
-   01
-
-   11    turn right
-   10
-
-   11  drive straight
-   11
-*/
 void MovementController::followLine() {
 
   int leftMostVal = digitalRead(leftMostLineTrackerPin);
@@ -114,23 +56,23 @@ void MovementController::followLine() {
   int rightMostVal = digitalRead(rightMostLineTrackerPin);
 
   if (leftMostVal == HIGH && rightMostVal == LOW) {
-    leftMotor.write(60);
+    leftMotor.write(50);
     rightMotor.write(90);
   } else if (leftMostVal == LOW && rightMostVal == HIGH) {
     leftMotor.write(90);
-    rightMotor.write(60);
+    rightMotor.write(50);
   } else if (leftMoreVal == HIGH && rightMoreVal == LOW) {
-    leftMotor.write(70);
+    leftMotor.write(65);
     rightMotor.write(90);
   } else if (leftMoreVal == LOW && rightMoreVal == HIGH) {
     leftMotor.write(90);
-    rightMotor.write(70);
+    rightMotor.write(65);
   } else if (leftVal == HIGH && rightVal == LOW) {
-    leftMotor.write(75);
+    leftMotor.write(78);
     rightMotor.write(90);
   } else if (leftVal == LOW && rightVal == HIGH) {
     leftMotor.write(90);
-    rightMotor.write(75);
+    rightMotor.write(78);
   } else {
     leftMotor.write(80);
     rightMotor.write(80);
@@ -144,8 +86,14 @@ void MovementController::goStraightLine() {
 }
 
 void MovementController::initLineCounter() {
-  oldColor = digitalRead(leftMostLineTrackerPin);
+  oldColor = digitalRead(rightCrossLineTrackerPin);
   numLinePassed = 0;
+}
+
+void MovementController::initFrontLineCounter() {
+  frontLeftOldColor = digitalRead(leftMostLineTrackerPin);
+  frontRightOldColor = digitalRead(rightMostLineTrackerPin);
+  numFrontLinePassed = 0;
 }
 
 
@@ -167,11 +115,6 @@ void MovementController::rotateCCW() {
   rightMotor.write(110);
 }
 
-void MovementController::stop() {
-  leftMotor.write(90);
-  rightMotor.write(90);
-}
-
 bool MovementController::isRotationDone(int dstDegree) {
   int degree = leftEncoder.read();
   int degreeDiff = degree - oldDegree;
@@ -180,51 +123,53 @@ bool MovementController::isRotationDone(int dstDegree) {
 }
 
 bool MovementController::isLine() {
-  int leftMostVal = digitalRead(leftMostLineTrackerPin);
   int leftMoreVal = digitalRead(leftMoreLineTrackerPin);
   int leftVal = digitalRead(leftLineTrackerPin);
 
   int rightVal = digitalRead(rightLineTrackerPin);
   int rightMoreVal = digitalRead(rightMoreLineTrackerPin);
-  int rightMostVal = digitalRead(rightMostLineTrackerPin);
 
-  //  Serial.print(leftMost);
-  //  Serial.print(" ");
-  //  Serial.print(leftMore);
-  //  Serial.print(" ");
-  //  Serial.print(left);
-  //  Serial.print(" ");
-  //  Serial.print(right);
-  //  Serial.print(" ");
-  //  Serial.print(rightMore);
-  //  Serial.print(" ");
-  //  Serial.println(rightMost);
-
-  return  leftVal == HIGH || leftMoreVal == HIGH || leftMostVal == HIGH || rightVal == HIGH || rightMoreVal == HIGH || rightMostVal == HIGH;
+  return  leftVal == HIGH || leftMoreVal == HIGH || rightVal == HIGH || rightMoreVal == HIGH;
 }
 
-void MovementController::initCrossDetection() {
+bool MovementController::isCross(int num) {
   bool rightCrossLineVal = digitalRead(rightCrossLineTrackerPin);
 
-  return rightCrossLineVal == HIGH;
+  if (rightCrossLineVal != oldColor) {
+    oldColor = rightCrossLineVal;
+    if (rightCrossLineVal == HIGH)
+      numLinePassed++;
+  }
+  return numLinePassed == num;
 }
 
-bool MovementController::isCross() {
-  bool rightCrossLineVal = digitalRead(rightCrossLineTrackerPin);
+bool MovementController::isFrontCross(int num) {
+  int leftMostLineVal = digitalRead(leftMostLineTrackerPin);
+  int rightMostLineVal = digitalRead(rightMostLineTrackerPin);
 
-  return rightCrossLineVal == HIGH;
+  if (leftMostLineVal != frontLeftOldColor || rightMostLineVal != frontRightOldColor) {
+
+    if (leftMostLineVal != frontLeftOldColor) frontLeftOldColor = leftMostLineVal;
+    if (rightMostLineVal != frontRightOldColor) frontRightOldColor = rightMostLineVal;
+
+    if (leftMostLineVal == HIGH && rightMostLineVal == HIGH) {
+      numFrontLinePassed++;
+      Serial.print("numFrontLinePassed ");
+      Serial.print(numFrontLinePassed);
+    }
+  }
+
+  return numFrontLinePassed ==  num;
 }
 
-bool MovementController::isFrontCross() {
-  bool leftMostLineVal = digitalRead(leftMostLineTrackerPin);
-  bool rightMostLineVal = digitalRead(rightMostLineTrackerPin);
-
-  return leftMostLineVal == HIGH && rightMostLineVal == HIGH;
+bool MovementController::hasFrontCross() {
+  isFrontCross(0);
+  return numFrontLinePassed >  1;
 }
 
 void MovementController::goBackward() {
-  leftMotor.write(105);
-  rightMotor.write(105);
+  leftMotor.write(110);
+  rightMotor.write(110);
 }
 
 bool MovementController::isReachingContainer() {
@@ -232,9 +177,8 @@ bool MovementController::isReachingContainer() {
   return containerVal == LOW;
 }
 
-bool MovementController::isNintyDone(Direction direction) {
-  int degree = leftEncoder.read();
-  int degreeDiff = degree - oldDegree;
+
+int MovementController::isNintyDoneShare(Direction direction) {
 
   bool mostLineVal = direction == RIGHT_DIRECTION ?
                      digitalRead(rightMostLineTrackerPin) :
@@ -245,6 +189,25 @@ bool MovementController::isNintyDone(Direction direction) {
     if (mostLineVal == HIGH) numLinePassed++;
   }
 
+  int degree = leftEncoder.read();
+  return degree - oldDegree;
+}
+
+bool MovementController::isNintyDone(Direction direction) {
+  int degreeDiff = isNintyDoneShare(direction);
   return abs(degreeDiff) <= 246 / 2 ? false : (numLinePassed > 1 && isLine());
 }
 
+bool MovementController::isNintyDoneEdge(Direction direction) {
+  int degreeDiff = isNintyDoneShare(direction);
+  return abs(degreeDiff) <= 246 / 2 ? false : isLine();
+}
+
+void MovementController::stop() {
+  leftMotor.write(90);
+  rightMotor.write(90);
+}
+
+bool MovementController::isStopped() {
+  return leftMotor.read() == 90 && rightMotor.read() == 90;
+}
