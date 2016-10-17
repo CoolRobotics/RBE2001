@@ -20,14 +20,15 @@ void ActionController::setup() {
   mvCtrl.setup();
   armCtrl.setup();
   grabberCtrl.setup();
+  lcdCtrl.setup();
 
   currActionStage = nextActionStage;
 
   // Default start from reactor B
   currLoc.set(Location::supply, 2);
-  dest.set(Location::storage, 4);
+  dest.set(Location::reactorB, 1);
 
-  addActionsToDest(dest);
+  addActionsToDest();
 
   //  // Generate queue of action
   //  addGrabFromReactorAtions();
@@ -68,10 +69,41 @@ void ActionController::addFollowLines(int n) {
     actions.push(followLineAction);
 }
 
-void ActionController::addActionsMoveToDest(Location dest) {
-  if (currLoc.target == Location::reactorA || currLoc.target == Location::reactorB)
-    addLeaveReactorToFieldAtions();
+/**
+   Get label of target
+*/
+char* ActionController::getLocationStr(Location loc) {
+  char str[17];
+  switch (loc.target) {
+    case Location::reactorA:
+      sprintf(str, "%s", "Reactor A");
+      break;
+    case Location::reactorB:
+      sprintf(str, "%s", "Reactor B");
+      break;
+    case Location::supply:
+      sprintf(str, "%s %d", "Supply", loc.num);
+      break;
+    case Location::storage:
+      sprintf(str, "%s %d", "Storage", loc.num);
+      break;
+  }
+  return str;
+}
 
+void ActionController::addActionsToDest() {
+  // Show source and destination
+  lcdCtrl.println(0, getLocationStr(currLoc));
+  lcdCtrl.println(1, getLocationStr(dest));
+
+  if (currLoc.target == Location::reactorA ||
+      currLoc.target == Location::reactorB) {
+    if (dest.target == Location::storage)
+      addGrabFromReactorAtions();
+    addLeaveReactorToFieldAtions();
+  }
+
+  // Calculate corresponding turns and follow line actions
   int d;
   if (currLoc.target == Location::reactorA) {
     if (dest.target == Location::storage) {
@@ -130,7 +162,7 @@ void ActionController::addActionsMoveToDest(Location dest) {
         else if (dest.target == Location::supply)
           if (dest.num == 4) actions.push(rotateRightNintyEdgeAction);
           else actions.push(rotateRightNintyAction);
-      } else if(dest.target == Location::supply) {
+      } else if (dest.target == Location::supply) {
         if (dest.num == 4) {
           actions.push(rotateLeftNintyAction);
           actions.push(followLineAction);
@@ -144,6 +176,11 @@ void ActionController::addActionsMoveToDest(Location dest) {
     }
   }
   else if (currLoc.target == Location::supply) {
+    // Grab new fuel rod from supply
+    if (dest.target == Location::reactorA ||
+        dest.target == Location::reactorB)
+      addGrabFromSupplyActions();
+
     actions.push(leaveContainerAction);
     if (dest.target == Location::reactorA)
       if (dest.num == 1) actions.push(rotateRightNintyEdgeAction);
@@ -176,7 +213,7 @@ void ActionController::addActionsMoveToDest(Location dest) {
         else if (dest.target == Location::supply)
           if (dest.num == 1) actions.push(rotateLeftNintyEdgeAction);
           else actions.push(rotateLeftNintyAction);
-      } else if(dest.target == Location::storage) {
+      } else if (dest.target == Location::storage) {
         if (dest.num == 1) {
           actions.push(rotateLeftNintyAction);
           actions.push(followLineAction);
@@ -191,6 +228,18 @@ void ActionController::addActionsMoveToDest(Location dest) {
   }
 
   actions.push(followLineToContainerAction);
+
+  // Release at storage
+  if ((currLoc.target == Location::reactorA ||
+       currLoc.target == Location::reactorB) &&
+      dest.target == Location::storage)
+    actions.push(releaseAction);
+
+  // Release at reactor
+  if (currLoc.target == Location::supply &&
+      (dest.target == Location::reactorA ||
+       dest.target == Location::reactorB))
+    addReleaseAtReactorActions();
 }
 
 void ActionController::act() {
@@ -199,7 +248,7 @@ void ActionController::act() {
       if (!actions.isEmpty()) {
         currAction = actions.pop();
         currActionStage = initActionStage;
-      }
+      } else currLoc = dest;
       break;
     case initActionStage:
       currAction.init(&mvCtrl, &armCtrl, &grabberCtrl);
@@ -210,6 +259,14 @@ void ActionController::act() {
       else currAction.act(&mvCtrl, &armCtrl, &grabberCtrl);
       break;
   }
+}
+
+void ActionController::addGrabFromSupplyActions() {
+  // Grab rod from supply
+  actions.push(releaseAction);
+  actions.push(liftUpArmAction);
+  actions.push(rotateUpGrabberAction);
+  actions.push(grabAction);
 }
 
 void ActionController::addGrabFromReactorAtions() {
@@ -359,7 +416,7 @@ RotateRightNintyEdgeAction::RotateRightNintyEdgeAction() {
   };
 }
 
-FollowLineToContainerAction::FollowLineToContainerAction() {
+followLineToContainerAction::FollowLineToContainerAction() {
   init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
     Serial.println("FollowLineToContainerAction init");
   };

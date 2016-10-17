@@ -2,6 +2,7 @@
 #include "MovementController.h"
 #include "ArmController.h"
 #include "GrabberController.h"
+#include "LCDController.h"
 
 // Action classes
 class Action {
@@ -171,7 +172,12 @@ class ActionController {
     void addGrabFromReactorAtions();
     void addLeaveReactorToFieldAtions();
     void addReleaseAtReactorActions();
+    void addGrabFromSupplyActions();
     void addFollowLines(int n);
-    void addActionsToDest(Location dest);
+    // Generate actions based on source and destination
+    void addActionsToDest();
+    char* getLocationStr(Location loc);
+    // LCD
+    LCDController lcdCtrl;
 };
 
