@@ -20,13 +20,51 @@ void ActionController::setup() {
   mvCtrl.setup();
   armCtrl.setup();
   grabberCtrl.setup();
-  lcdCtrl.setup();
+//  lcdCtrl.setup();
+  btCtrl.setup(this);
 
   currActionStage = nextActionStage;
+  isActive = false;
+
+  
+}
+
+void ActionController::act() {
+  // Process Bluetooth actions
+  // Send heartbeats to field
+  btCtrl.sendHeartbeat();
+  btCtrl.act();
+
+  // Only move or grab rod when robot is active
+  if (isActive)
+    switch (currActionStage) {
+      case nextActionStage:
+        if (!actions.isEmpty()) {
+          currAction = actions.pop();
+          currActionStage = initActionStage;
+        } else currLoc.set(dest.target, dest.num);
+        break;
+      case initActionStage:
+        currAction.init(this);
+        currActionStage = performActionStage;
+        break;
+      case performActionStage:
+        if (currAction.isFinished(this)) currActionStage = nextActionStage;
+        else currAction.act(this);
+        break;
+    } else mvCtrl.stop();
+}
+
+// Bluetooth controller outputs
+void ActionController::onResume() {
+  isActive = true;
+}
+void ActionController::onStop() {
+  isActive = false;
 }
 
 void ActionController::start(Location::Target t, int n) {
-  if(t == Location::reactorA || t == Location::reactorB)
+  if (t == Location::reactorA || t == Location::reactorB)
     actions.push(followLineToContainerAction);
   dest.set(t, n);
 }
@@ -35,7 +73,7 @@ void ActionController::to(Location::Target t, int n) {
   currLoc.set(dest.target, dest.num);
   dest.set(t, n);
   addActionsToDest();
-  
+
 }
 
 void ActionController::addFollowLines(int n) {
@@ -67,8 +105,8 @@ char* ActionController::getLocationStr(Location loc) {
 
 void ActionController::addActionsToDest() {
   // Show source and destination
-  lcdCtrl.println(0, getLocationStr(currLoc));
-  lcdCtrl.println(1, getLocationStr(dest));
+//  lcdCtrl.println(0, getLocationStr(currLoc));
+//  lcdCtrl.println(1, getLocationStr(dest));
 
   if (currLoc.target == Location::reactorA ||
       currLoc.target == Location::reactorB) {
@@ -216,25 +254,6 @@ void ActionController::addActionsToDest() {
     addReleaseAtReactorActions();
 }
 
-void ActionController::act() {
-  switch (currActionStage) {
-    case nextActionStage:
-      if (!actions.isEmpty()) {
-        currAction = actions.pop();
-        currActionStage = initActionStage;
-      } else currLoc.set(dest.target, dest.num);
-      break;
-    case initActionStage:
-      currAction.init(&mvCtrl, &armCtrl, &grabberCtrl);
-      currActionStage = performActionStage;
-      break;
-    case performActionStage:
-      if (currAction.isFinished(&mvCtrl, &armCtrl, &grabberCtrl)) currActionStage = nextActionStage;
-      else currAction.act(&mvCtrl, &armCtrl, &grabberCtrl);
-      break;
-  }
-}
-
 void ActionController::addGrabFromSupplyActions() {
   // Grab rod from supply
   actions.push(releaseAction);
@@ -271,303 +290,303 @@ void ActionController::addReleaseAtReactorActions() {
 
 // Movement Actions
 LeaveReactorAction::LeaveReactorAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("LeaveReactorAction init");
-    mvCtrl->initFrontLineCounter();
+    actionCtrl->mvCtrl.initFrontLineCounter();
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("LeaveReactorAction act");
-    mvCtrl->goBackward();
+    actionCtrl->mvCtrl.goBackward();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("LeaveReactorAction isFinished");
-    return mvCtrl->isFrontCross(1);
+    return actionCtrl->mvCtrl.isFrontCross(1);
   };
 }
 
 RotateOneEightyAction::RotateOneEightyAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateOneEightyAction init");
-    mvCtrl->initRotation(MovementController::LEFT_DIRECTION);
+    actionCtrl->mvCtrl.initRotation(MovementController::LEFT_DIRECTION);
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateOneEightyAction act");
-    mvCtrl->rotateCCW();
+    actionCtrl->mvCtrl.rotateCCW();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateOneEightyAction isFinished");
-    return mvCtrl->isRotationDone(180);
+    return actionCtrl->mvCtrl.isRotationDone(180);
   };
 }
 
 FollowLineToFieldAction::FollowLineToFieldAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("FollowLineToFieldAction init");
-    mvCtrl->initLineCounter();
-    mvCtrl->initFrontLineCounter();
+    actionCtrl->mvCtrl.initLineCounter();
+    actionCtrl->mvCtrl.initFrontLineCounter();
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("FollowLineToFieldAction act");
-    mvCtrl->followLine();
+    actionCtrl->mvCtrl.followLine();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.print("FollowLineToFieldAction isFinished");
-    return mvCtrl->hasFrontCross() && mvCtrl->isCross(1);
+    return actionCtrl->mvCtrl.hasFrontCross() && actionCtrl->mvCtrl.isCross(1);
   };
 }
 
 RotateLeftNintyAction::RotateLeftNintyAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateLeftNintyAction init");
-    mvCtrl->initRotation(MovementController::LEFT_DIRECTION);
+    actionCtrl->mvCtrl.initRotation(MovementController::LEFT_DIRECTION);
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateLeftNintyAction act");
-    mvCtrl->rotateCCW();
+    actionCtrl->mvCtrl.rotateCCW();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateLeftNintyAction isFinished");
-    return mvCtrl->isNintyDone(MovementController::LEFT_DIRECTION);
+    return actionCtrl->mvCtrl.isNintyDone(MovementController::LEFT_DIRECTION);
   };
 }
 
 RotateRightNintyAction::RotateRightNintyAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateRightNintyA init");
-    mvCtrl->initRotation(MovementController::RIGHT_DIRECTION);
+    actionCtrl->mvCtrl.initRotation(MovementController::RIGHT_DIRECTION);
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateRightNintyA act");
-    mvCtrl->rotateCW();
+    actionCtrl->mvCtrl.rotateCW();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateRightNintyA isFinished");
-    return mvCtrl->isNintyDone(MovementController::RIGHT_DIRECTION);
+    return actionCtrl->mvCtrl.isNintyDone(MovementController::RIGHT_DIRECTION);
   };
 }
 
 RotateLeftNintyEdgeAction::RotateLeftNintyEdgeAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateLeftNintyEdgeAction init");
-    mvCtrl->initRotation(MovementController::LEFT_DIRECTION);
+    actionCtrl->mvCtrl.initRotation(MovementController::LEFT_DIRECTION);
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateLeftNintyEdgeAction act");
-    mvCtrl->rotateCCW();
+    actionCtrl->mvCtrl.rotateCCW();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateLeftNintyEdgeAction isFinished");
-    return mvCtrl->isNintyDoneEdge(MovementController::LEFT_DIRECTION);
+    return actionCtrl->mvCtrl.isNintyDoneEdge(MovementController::LEFT_DIRECTION);
   };
 }
 
 RotateRightNintyEdgeAction::RotateRightNintyEdgeAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateRightNintyEdgeAction init");
-    mvCtrl->initRotation(MovementController::RIGHT_DIRECTION);
+    actionCtrl->mvCtrl.initRotation(MovementController::RIGHT_DIRECTION);
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateRightNintyEdgeAction act");
-    mvCtrl->rotateCW();
+    actionCtrl->mvCtrl.rotateCW();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateRightNintyEdgeAction isFinished");
-    return mvCtrl->isNintyDoneEdge(MovementController::RIGHT_DIRECTION);
+    return actionCtrl->mvCtrl.isNintyDoneEdge(MovementController::RIGHT_DIRECTION);
   };
 }
 
 FollowLineToContainerAction::FollowLineToContainerAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("FollowLineToContainerAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("FollowLineToContainerAction act");
-    mvCtrl->followLine();
+    actionCtrl->mvCtrl.followLine();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.print("FollowLineToContainerAction isFinished");
-    return mvCtrl->isReachingContainer();
+    return actionCtrl->mvCtrl.isReachingContainer();
   };
 }
 
 LeaveContainerAction::LeaveContainerAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("LeaveContainerAction init");
-    mvCtrl->initLineCounter();
+    actionCtrl->mvCtrl.initLineCounter();
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("LeaveContainerLeftAction act");
-    mvCtrl->goBackward();
+    actionCtrl->mvCtrl.goBackward();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("LeaveContainerLeftAction isFinished");
-    return mvCtrl->isCross(1);
+    return actionCtrl->mvCtrl.isCross(1);
   };
 }
 
 FollowLineAction::FollowLineAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("FollowLineAction init");
-    mvCtrl->initLineCounter();
+    actionCtrl->mvCtrl.initLineCounter();
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("FollowLineAction act");
-    mvCtrl->followLine();
+    actionCtrl->mvCtrl.followLine();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("FollowLineAction isFinished");
-    return mvCtrl->isCross(1);
+    return actionCtrl->mvCtrl.isCross(1);
   };
 }
 
 // Arm Actions
 DropDownArmAction::DropDownArmAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("DropDownArmAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("DropDownArmAction act");
-    armCtrl->dropDown();
+    actionCtrl->armCtrl.dropDown();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("DropDownArmAction isFinished");
-    return armCtrl->isDropDownFinish();
+    return actionCtrl->armCtrl.isDropDownFinish();
   };
 }
 
 LiftUpArmAction::LiftUpArmAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("LiftUpArmAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("LiftUpArmAction act");
-    armCtrl->liftUp();
+    actionCtrl->armCtrl.liftUp();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("LiftUpArmAction isFinished");
-    return armCtrl->isLiftedUp();
+    return actionCtrl->armCtrl.isLiftedUp();
   };
 }
 
 // Grabber Actions
 GrabAction::GrabAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("GrabAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("GrabAction act");
-    grabberCtrl->grab();
+    actionCtrl->grabberCtrl.grab();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("GrabAction isFinished");
-    return grabberCtrl->isGrabFinished();
+    return actionCtrl->grabberCtrl.isGrabFinished();
   };
 }
 
 ReleaseAction::ReleaseAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("ReleaseAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("ReleaseAction act");
-    grabberCtrl->release();
+    actionCtrl->grabberCtrl.release();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("ReleaseAction isFinished");
-    return grabberCtrl->isReleaseFinished();
+    return actionCtrl->grabberCtrl.isReleaseFinished();
   };
 }
 
 
 RotateDownGrabberAction::RotateDownGrabberAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateDownGrabberAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateDownGrabberAction act");
-    grabberCtrl->rotateDownGrabber();
+    actionCtrl->grabberCtrl.rotateDownGrabber();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateDownGrabberAction isFinished");
-    return grabberCtrl->isRotateDownGrabberDone();
+    return actionCtrl->grabberCtrl.isRotateDownGrabberDone();
   };
 }
 
 RotateUpGrabberAction::RotateUpGrabberAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateUpGrabberAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateUpGrabberAction act");
-    grabberCtrl->rotateUpGrabber();
+    actionCtrl->grabberCtrl.rotateUpGrabber();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateUpGrabberAction isFinished");
-    return grabberCtrl->isRotateUpGrabberDone();
+    return actionCtrl->grabberCtrl.isRotateUpGrabberDone();
   };
 }
 
 RotateDownGrabberAtReactorAction::RotateDownGrabberAtReactorAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateDownGrabberAtReactorAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("RotateDownGrabberAtReactorAction act");
-    grabberCtrl->rotateDownGrabberAtReactor();
+    actionCtrl->grabberCtrl.rotateDownGrabberAtReactor();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("RotateDownGrabberAtReactorAction isFinished");
-    return grabberCtrl->isRotateDownGrabberAtReactorDone();
+    return actionCtrl->grabberCtrl.isRotateDownGrabberAtReactorDone();
   };
 }
 
 StopMovingAction::StopMovingAction() {
-  init = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  init = [](ActionController* actionCtrl) -> void {
     Serial.println("StopMovingAction init");
   };
 
-  act = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> void {
+  act = [](ActionController* actionCtrl) -> void {
     Serial.println("StopMovingAction act");
-    mvCtrl->stop();
+    actionCtrl->mvCtrl.stop();
   };
 
-  isFinished = [](MovementController * mvCtrl, ArmController * armCtrl, GrabberController * grabberCtrl) -> bool {
+  isFinished = [](ActionController* actionCtrl) -> bool {
     Serial.println("StopMovingAction isFinished");
-    return mvCtrl->isStopped();
+    return actionCtrl->mvCtrl.isStopped();
   };
 }
 

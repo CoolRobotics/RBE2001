@@ -2,14 +2,15 @@
 #include "MovementController.h"
 #include "ArmController.h"
 #include "GrabberController.h"
-#include "LCDController.h"
+//#include "LCDController.h"
+#include "BluetoothController.h"
 
 // Action classes
 class Action {
   public:
-    void (*init)(MovementController*, ArmController*, GrabberController*);
-    bool (*isFinished)(MovementController*, ArmController*, GrabberController*);
-    void (*act)(MovementController*, ArmController*, GrabberController*);
+    void (*init)(ActionController*);
+    bool (*isFinished)(ActionController*);
+    void (*act)(ActionController*);
 };
 
 // Movement Actions
@@ -123,12 +124,24 @@ class Location {
 // Action controller
 class ActionController {
   public:
+    // Action controllers
+    MovementController mvCtrl;
+    ArmController armCtrl;
+    GrabberController grabberCtrl;
+    BluetoothController btCtrl;
+    // LCD
+//    LCDController lcdCtrl;
     void setup();
     void act();
     void start(Location::Target t, int n);
     void to(Location::Target t, int n);
+    // Bluetooth controller outputs
+    void onResume();
+    void onStop();
 
   private:
+    bool isActive;
+
     typedef enum {
       initActionStage,
       performActionStage,
@@ -138,15 +151,10 @@ class ActionController {
     // Locations
     Location currLoc;
     Location dest;
-    
+
     Action currAction;
     ActionStage currActionStage;
     QueueList<Action> actions;
-
-    // Action controllers
-    MovementController mvCtrl;
-    ArmController armCtrl;
-    GrabberController grabberCtrl;
 
     // List of predefined actions
     // Movement Actions
@@ -179,7 +187,5 @@ class ActionController {
     // Generate actions based on source and destination
     void addActionsToDest();
     char* getLocationStr(Location loc);
-    // LCD
-    LCDController lcdCtrl;
 };
 
