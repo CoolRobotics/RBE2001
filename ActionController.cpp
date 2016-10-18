@@ -327,7 +327,10 @@ void ActionController::addLeaveReactorToFieldAtions() {
 void ActionController::addReleaseAtReactorActions() {
   // Release rod at reactor
   actions.push(rotateDownGrabberAtReactorAction);
-  actions.push(dropDownArmAction);
+  actions.push(dropDownAtReactorAction);
+  actions.push(rotateDownGrabberMoreAtReactorAction);
+  actions.push(dropDownMoreAtReactorAction);
+
   actions.push(releaseAction);
   actions.push(liftUpArmAction);
   actions.push(rotateUpGrabberAction);
@@ -537,6 +540,38 @@ LiftUpArmAction::LiftUpArmAction() {
   };
 }
 
+DropDownAtReactorAction::DropDownAtReactorAction() {
+  init = [](ActionController * actionCtrl) -> void {
+    Serial.println("DropDownAtReactorAction init");
+  };
+
+  act = [](ActionController * actionCtrl) -> void {
+    Serial.println("DropDownAtReactorAction act");
+    actionCtrl->armCtrl.dropDownAtReactor();
+  };
+
+  isFinished = [](ActionController * actionCtrl) -> bool {
+    Serial.println("DropDownAtReactorAction isFinished");
+    return actionCtrl->armCtrl.isDropDownAtReactorDone();
+  };
+}
+
+DropDownMoreAtReactorAction::DropDownMoreAtReactorAction() {
+  init = [](ActionController * actionCtrl) -> void {
+    Serial.println("DropDownMoreAtReactorAction init");
+  };
+
+  act = [](ActionController * actionCtrl) -> void {
+    Serial.println("DropDownMoreAtReactorAction act");
+    actionCtrl->armCtrl.dropDownMoreAtReactor();
+  };
+
+  isFinished = [](ActionController * actionCtrl) -> bool {
+    Serial.println("DropDownMoreAtReactorAction isFinished");
+    return actionCtrl->armCtrl.isDropDownMoreAtReactorDone();
+  };
+}
+
 // Grabber Actions
 GrabAction::GrabAction() {
   init = [](ActionController * actionCtrl) -> void {
@@ -584,6 +619,22 @@ RotateDownGrabberAction::RotateDownGrabberAction() {
   isFinished = [](ActionController * actionCtrl) -> bool {
     Serial.println("RotateDownGrabberAction isFinished");
     return actionCtrl->grabberCtrl.isRotateDownGrabberDone();
+  };
+}
+
+RotateDownGrabberMoreAtReactorAction::RotateDownGrabberMoreAtReactorAction() {
+  init = [](ActionController * actionCtrl) -> void {
+    Serial.println("RotateDownGrabberMoreAtReactorAction init");
+  };
+
+  act = [](ActionController * actionCtrl) -> void {
+    Serial.println("RotateDownGrabberMoreAtReactorAction act");
+    actionCtrl->grabberCtrl.rotateDownGrabberMoreAtReactor();
+  };
+
+  isFinished = [](ActionController * actionCtrl) -> bool {
+    Serial.println("RotateDownGrabberMoreAtReactorAction isFinished");
+    return actionCtrl->grabberCtrl.isRotateDownGrabberMoreAtReactorDone();
   };
 }
 
@@ -656,9 +707,10 @@ GenerateAction::GenerateAction() {
     if (actionCtrl->currLoc.target == Location::reactorA ||
     actionCtrl->currLoc.target == Location::reactorB) {
       if (!actionCtrl->reacting[Location::reactorA] || !actionCtrl->reacting[Location::reactorB]) {
-        if (!actionCtrl->reacting[Location::reactorA] && !actionCtrl->reacting[Location::reactorB])
+        if (!actionCtrl->reacting[Location::reactorA] && !actionCtrl->reacting[Location::reactorB]) {
           // Set current reactor
           actionCtrl->currReactor = actionCtrl->currLoc.target;
+        }
         else if (!actionCtrl->reacting[Location::reactorA]) {
           actionCtrl->currReactor = Location::reactorA;
         } else

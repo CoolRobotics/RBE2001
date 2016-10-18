@@ -89,7 +89,8 @@ bool BTComms::read() {
         message[messageIndex++] = inByte;
         if (messageIndex >= messageLength) {
           BTstate = kLookingForStart;
-          return isChecksumCorrect();
+          return true;
+//          return isChecksumCorrect();
         }
         break;
       default:

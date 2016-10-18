@@ -81,6 +81,16 @@ class LiftUpArmAction: public Action {
     LiftUpArmAction();
 };
 
+class DropDownAtReactorAction: public Action {
+  public:
+    DropDownAtReactorAction();
+};
+
+class DropDownMoreAtReactorAction: public Action {
+  public:
+    DropDownMoreAtReactorAction();
+};
+
 // Grabber Actions
 class GrabAction: public Action {
   public:
@@ -105,6 +115,11 @@ class RotateUpGrabberAction: public Action {
 class RotateDownGrabberAtReactorAction: public Action {
   public:
     RotateDownGrabberAtReactorAction();
+};
+
+class RotateDownGrabberMoreAtReactorAction: public Action {
+  public:
+    RotateDownGrabberMoreAtReactorAction();
 };
 
 // status actions
@@ -239,6 +254,9 @@ class ActionController {
     // Arm Actions
     DropDownArmAction dropDownArmAction;
     LiftUpArmAction liftUpArmAction;
+    DropDownAtReactorAction dropDownAtReactorAction;
+    DropDownMoreAtReactorAction dropDownMoreAtReactorAction;
+
 
     // Grabber Actions
     GrabAction grabAction;
@@ -246,6 +264,7 @@ class ActionController {
     RotateDownGrabberAction rotateDownGrabberAction;
     RotateUpGrabberAction rotateUpGrabberAction;
     RotateDownGrabberAtReactorAction rotateDownGrabberAtReactorAction;
+    RotateDownGrabberMoreAtReactorAction rotateDownGrabberMoreAtReactorAction;
 
     // Aggregated actions
     void addGrabFromReactorAtions();

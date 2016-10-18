@@ -8,6 +8,10 @@ class ArmController {
     bool isDropDownFinish();
     void liftUp();
     bool isLiftedUp();
+    void dropDownAtReactor();
+    bool isDropDownAtReactorDone();
+    void dropDownMoreAtReactor();
+    bool isDropDownMoreAtReactorDone();
 
   private:
     int lowerLimitSwitchPin;

@@ -74,8 +74,8 @@ void MovementController::followLine() {
     leftMotor.write(90);
     rightMotor.write(78);
   } else {
-    leftMotor.write(80);
-    rightMotor.write(80);
+    leftMotor.write(76);
+    rightMotor.write(76);
   }
 
 }
@@ -101,13 +101,13 @@ void MovementController::initRotation(Direction direction) {
 }
 
 void MovementController::rotateCW() {
-  leftMotor.write(115);
-  rightMotor.write(76);
+  leftMotor.write(113);
+  rightMotor.write(78);
 }
 
 void MovementController::rotateCCW() {
-  leftMotor.write(76);
-  rightMotor.write(115);
+  leftMotor.write(78);
+  rightMotor.write(113);
 }
 
 bool MovementController::isRotationDone(int dstDegree) {

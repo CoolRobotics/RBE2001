@@ -13,31 +13,39 @@ void ArmController::setup() {
   armServo.attach(7);
 }
 
-bool armStatus = true;
-void ArmController::dropDown() {
-  armServo.write(98);
-  delay(2000);
-  armStatus = false;
-}
-
 void ArmController::liftUp() {
   armServo.write(70);
-  delay(2000);
-  armStatus = true;
+  delay(1000);
 }
 
 bool ArmController::isLiftedUp() {
-  if (digitalRead(upperLimitSwitchPin) == LOW) {
-    armStatus = true;
-    return true;
-  }
-  return false;
+  return digitalRead(upperLimitSwitchPin) == LOW;
+}
+
+void ArmController::dropDown() {
+  armServo.write(98);
+  delay(1000);
 }
 
 bool ArmController::isDropDownFinish() {
-  if (digitalRead(lowerLimitSwitchPin) == LOW) {
-    armStatus = false;
-    return true;
-  }
-  return false;
+  return digitalRead(lowerLimitSwitchPin) == LOW;
+}
+
+void ArmController::dropDownAtReactor() {
+  armServo.write(100);
+  delay(1000);
+}
+
+bool ArmController::isDropDownAtReactorDone() {
+  return  armServo.read() == 100;
+}
+
+void ArmController::dropDownMoreAtReactor() {
+  armServo.write(100);
+  delay(1000);
+}
+
+bool ArmController::isDropDownMoreAtReactorDone() {
+  return  armServo.read() == 100
+  ;
 }

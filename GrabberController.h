@@ -13,6 +13,9 @@ class GrabberController {
     bool isRotateUpGrabberDone();
     void rotateDownGrabberAtReactor();
     bool isRotateDownGrabberAtReactorDone();
+    void rotateDownGrabberMoreAtReactor();
+    bool isRotateDownGrabberMoreAtReactorDone();
+    
   private:
     Servo grabberServo;
     Servo transPlaneServo;
