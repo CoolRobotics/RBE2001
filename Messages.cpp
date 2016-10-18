@@ -49,6 +49,17 @@ void Messages::sendHeartbeat() {
   comms.writeMessage(kHeartbeat, me, all);
 }
 
+
+/**
+   Send a alert message to the field to let it know that robot is carrying fuel
+*/
+void Messages::sendAlert(bool isNew) {
+  unsigned char data;
+  if(isNew) data = 0xFF;
+  else data = 0x2C;
+  comms.writeMessage(kRadiationAlert, me, all, data);
+}
+
 /**
    Print message for debugging
    This method prints the message as a string of hex numbers strictly for debugging

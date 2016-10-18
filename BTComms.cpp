@@ -32,6 +32,19 @@ void BTComms::writeMessage(unsigned char b1, unsigned char b2, unsigned char b3)
 }
 
 /**
+   Send a message with data
+*/
+void BTComms::writeMessage(unsigned char b1, unsigned char b2, unsigned char b3, unsigned char b4) {
+  Serial3.write(kMessageStart);
+  Serial3.write(6);
+  Serial3.write(b1);
+  Serial3.write(b2);
+  Serial3.write(b3);
+  Serial3.write(b4);
+  Serial3.write(0xff - (b1 + b2 + b3 + b4 + 6));
+}
+
+/**
    Get the length of the currently received message
    @returns int The number of bytes in the received message
 */
@@ -90,7 +103,7 @@ bool BTComms::read() {
  * Return true if checksum is correct, false otherwise
  */
 bool BTComms::isChecksumCorrect() {
-  int sum = messageLength + 1;
+  int sum = messageLength;
   for (int i = 0; i < messageLength + 1; i++)
     sum += message[i];
   if (sum != 0xff) return false;

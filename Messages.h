@@ -37,7 +37,7 @@ class Messages {
     Messages();
     bool isStopped();
     void sendHeartbeat();
-    void sendStatus();
+    void sendAlert(bool isNew);
     bool read();
     void setup();
     void printMessage();
