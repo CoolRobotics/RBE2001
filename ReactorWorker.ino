@@ -17,9 +17,6 @@ void setup() {
 
   actionCtrl.setup();
   actionCtrl.start(Location::reactorB, 1);
-  actionCtrl.to(Location::storage, 2);
-  actionCtrl.to(Location::supply, 2);
-  actionCtrl.to(Location::reactorB, 1);
 }
 
 /**

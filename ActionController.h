@@ -2,8 +2,9 @@
 #include "MovementController.h"
 #include "ArmController.h"
 #include "GrabberController.h"
-//#include "LCDController.h"
+#include "LCDController.h"
 #include "BluetoothController.h"
+#include "LEDController.h"
 
 // Action classes
 class Action {
@@ -106,13 +107,46 @@ class RotateDownGrabberAtReactorAction: public Action {
     RotateDownGrabberAtReactorAction();
 };
 
+// status actions
+class NewFuelStatusAction: public Action {
+  public:
+    NewFuelStatusAction();
+};
+
+class SpentFuelStatusAction: public Action {
+  public:
+    SpentFuelStatusAction();
+};
+
+class NoFuelStatusAction: public Action {
+  public:
+    NoFuelStatusAction();
+};
+
+// reactor actions
+class StartReactionAction: public Action {
+  public:
+    StartReactionAction();
+};
+
+class StopReactionAction: public Action {
+  public:
+    StopReactionAction();
+};
+
+// generate actions
+class GenerateAction: public Action {
+  public:
+    GenerateAction();
+};
+
 class Location {
   public:
     typedef enum {
+      reactorA,
+      reactorB,
       storage,
       supply,
-      reactorA,
-      reactorB
     } Target;
 
     void set(Target t, int n);
@@ -124,13 +158,22 @@ class Location {
 // Action controller
 class ActionController {
   public:
+    typedef enum {
+      newFuel,
+      spentFuel,
+      noFuel
+    } Status;
+
+    Status status;
+
     // Action controllers
     MovementController mvCtrl;
     ArmController armCtrl;
     GrabberController grabberCtrl;
     BluetoothController btCtrl;
+    LEDController ledCtrl;
     // LCD
-    //    LCDController lcdCtrl;
+    LCDController lcdCtrl;
     void setup();
     void act();
     void start(Location::Target t, int n);
@@ -142,12 +185,33 @@ class ActionController {
     void onSupplyChange(byte supplyState);
     bool storage[4];
     bool supply[4];
-    unsigned long reactorATime;
-    unsigned long reactorBTime;
+
+    Location::Target currReactor;
+    bool generatingAction;
+    // 0 for reactor A and 1 for reactor B
+    bool reacting[2];
+    unsigned long reactionBegin[2];
     bool isReactionDone(unsigned long reactorTime);
+    // Locations
+    Location currLoc;
+    Location dest;
+    bool isActive;
+
+    char* getLocationStr(Location loc);
+
+    // Should all be private
+    QueueList<Action> actions;
+    // Status action
+    NewFuelStatusAction newFuelStatusAction;
+    SpentFuelStatusAction spentFuelStatusAction;
+    NoFuelStatusAction noFuelStatusAction;
+    // Reactor action
+    StartReactionAction startReactionAction;
+    StopReactionAction stopReactionAction;
+    // Generate action
+    GenerateAction generateAction;
 
   private:
-    bool isActive;
 
     typedef enum {
       initActionStage,
@@ -155,13 +219,8 @@ class ActionController {
       nextActionStage
     } ActionStage;
 
-    // Locations
-    Location currLoc;
-    Location dest;
-
     Action currAction;
     ActionStage currActionStage;
-    QueueList<Action> actions;
 
     // List of predefined actions
     // Movement Actions
@@ -176,23 +235,26 @@ class ActionController {
     LeaveContainerAction leaveContainerAction;
     FollowLineAction followLineAction;
     StopMovingAction stopMovingAction;
+
     // Arm Actions
     DropDownArmAction dropDownArmAction;
     LiftUpArmAction liftUpArmAction;
+
     // Grabber Actions
     GrabAction grabAction;
     ReleaseAction releaseAction;
     RotateDownGrabberAction rotateDownGrabberAction;
     RotateUpGrabberAction rotateUpGrabberAction;
     RotateDownGrabberAtReactorAction rotateDownGrabberAtReactorAction;
+
     // Aggregated actions
     void addGrabFromReactorAtions();
     void addLeaveReactorToFieldAtions();
     void addReleaseAtReactorActions();
     void addGrabFromSupplyActions();
     void addFollowLines(int n);
+
     // Generate actions based on source and destination
     void addActionsToDest();
-    char* getLocationStr(Location loc);
 };
 

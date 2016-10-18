@@ -80,11 +80,6 @@ void MovementController::followLine() {
 
 }
 
-void MovementController::goStraightLine() {
-  leftMotor.write(80);
-  rightMotor.write(80);
-}
-
 void MovementController::initLineCounter() {
   oldColor = digitalRead(rightCrossLineTrackerPin);
   numLinePassed = 0;
@@ -106,13 +101,13 @@ void MovementController::initRotation(Direction direction) {
 }
 
 void MovementController::rotateCW() {
-  leftMotor.write(110);
-  rightMotor.write(80);
+  leftMotor.write(115);
+  rightMotor.write(76);
 }
 
 void MovementController::rotateCCW() {
-  leftMotor.write(80);
-  rightMotor.write(110);
+  leftMotor.write(76);
+  rightMotor.write(115);
 }
 
 bool MovementController::isRotationDone(int dstDegree) {

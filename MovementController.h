@@ -20,7 +20,6 @@ class MovementController {
     void initLineCounter();
     void goBackward();
     bool isLine();
-    void goStraightLine();
     void followLineWeak();
     bool isNintyDone(Direction direction);
     bool isNintyDoneEdge(Direction direction);
