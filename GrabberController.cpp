@@ -33,12 +33,12 @@ bool GrabberController::isRotateDownGrabberDone() {
 }
 
 void GrabberController::rotateDownGrabberAtReactor() {
-  transPlaneServo.write(98);
+  transPlaneServo.write(96);
   delay(1000);
 }
 
 bool GrabberController::isRotateDownGrabberAtReactorDone() {
-  return transPlaneServo.read() == 98;
+  return transPlaneServo.read() == 96;
 }
 
 
