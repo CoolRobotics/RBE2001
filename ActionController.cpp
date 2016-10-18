@@ -26,7 +26,12 @@ void ActionController::setup() {
   currActionStage = nextActionStage;
   isActive = false;
 
-  
+  reactorABegin = millis();
+  reactorBBegin = millis();
+}
+
+bool ActionController::isReactionDone(unsigned long reactionBegin) {
+  return millis() - reactionBegin > 10000;
 }
 
 void ActionController::act() {
@@ -61,6 +66,16 @@ void ActionController::onResume() {
 }
 void ActionController::onStop() {
   isActive = false;
+}
+
+void ActionController::onStorageChange(byte storageState) {
+  for(int i = 0; i < 4; i++)
+    storage[i] = storageState & (1 << i);
+}
+
+void ActionController::onSupplyChange(byte supplyState) {
+  for(int i = 0; i < 4; i++)
+    supply[i] = supplyState & (1 << i);
 }
 
 void ActionController::start(Location::Target t, int n) {

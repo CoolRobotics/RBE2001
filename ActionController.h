@@ -130,7 +130,7 @@ class ActionController {
     GrabberController grabberCtrl;
     BluetoothController btCtrl;
     // LCD
-//    LCDController lcdCtrl;
+    //    LCDController lcdCtrl;
     void setup();
     void act();
     void start(Location::Target t, int n);
@@ -138,6 +138,13 @@ class ActionController {
     // Bluetooth controller outputs
     void onResume();
     void onStop();
+    void onStorageChange(byte storageState);
+    void onSupplyChange(byte supplyState);
+    bool storage[4];
+    bool supply[4];
+    unsigned long reactorATime;
+    unsigned long reactorBTime;
+    bool isReactionDone(unsigned long reactorTime);
 
   private:
     bool isActive;

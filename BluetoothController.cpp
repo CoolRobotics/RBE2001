@@ -1,8 +1,14 @@
 #include "Arduino.h"
 #include "ActionController.h"
+#include "LCDController.h"
+
+
+LCDController lcdCtrl;
 
 void BluetoothController::setup(ActionController *actionCtrl) {
   msg.setup();
+  lcdCtrl.setup();
+  
   timeForHeartbeat = millis() + 1000;
   this->actionCtrl = actionCtrl;
 }
@@ -15,6 +21,7 @@ void BluetoothController::setup(ActionController *actionCtrl) {
 //                  kRobotStatus,
 //                  kHeartbeat
 void BluetoothController::act() {
+  char str[5];
   if (msg.read()) {
     switch (msg.getMessageType()) {
       case Messages::kStopMovement:
@@ -26,9 +33,12 @@ void BluetoothController::act() {
         actionCtrl->onResume();
         break;
       case Messages::kStorageAvailability:
-        
+        actionCtrl->onStorageChange(msg.getStorage());
         break;
       case Messages::kSupplyAvailability:
+//        sprintf(str, "%d", msg.getSupply());
+//        lcdCtrl.println(1, str);
+        actionCtrl->onSupplyChange(msg.getSupply());
         break;
     }
   }

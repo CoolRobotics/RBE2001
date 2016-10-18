@@ -7,8 +7,6 @@
 
 BTComms comms;
 Messages::MessageType msgType;
-unsigned int me = 0x10;
-unsigned int all = 0x00;
 
 
 /**
@@ -17,7 +15,11 @@ unsigned int all = 0x00;
    Note: you cannot call methods that depend on other classes having already been created
 */
 Messages::Messages() {
-  stopped = false;
+  stopped = true;
+  me = 0x10;
+  all = 0x00;
+  supply = 0x0;
+  storage = 0x0;
 }
 
 /**
@@ -26,7 +28,8 @@ Messages::Messages() {
 */
 void Messages::setup() {
   comms.setup();
-  lcdCtrl.setup();
+  // Receiver
+
 }
 
 /**
@@ -72,16 +75,16 @@ bool Messages::isToMe() {
    inside member variables. Then add getters/setters to retrieve the status from your program.
 */
 bool Messages::read() {
+  int data_mask = 0xf;
   if (comms.read() && isToMe()) {
     switch (comms.getMessageByte(0)) {
       case kStorageAvailability:
         setMessageType(kStorageAvailability);
+        storage = comms.getMessageByte(3) & data_mask;
         break;
       case kSupplyAvailability:
-        char str[5];
-        sprintf(str, "%04x", comms.getMessageByte(3));
-        lcdCtrl.println(0, str);
         setMessageType(kSupplyAvailability);
+        supply = comms.getMessageByte(3) & data_mask;
         break;
       case kRadiationAlert:
         setMessageType(kRadiationAlert);
@@ -104,9 +107,18 @@ bool Messages::read() {
   return false;
 }
 
+byte Messages::getSupply() {
+  return supply;
+}
+
+byte  Messages::getStorage() {
+  return storage;
+}
+
 void Messages::setMessageType(Messages::MessageType type) {
   msgType = type;
 }
+
 Messages::MessageType Messages::getMessageType() {
   return msgType;
 }

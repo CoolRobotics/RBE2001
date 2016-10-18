@@ -4,7 +4,6 @@
 
 #ifndef MESSAGES_H_
 #define MESSAGES_H_
-#include "LCDController.h"
 /**
    Handles Bluetooth messages as they are received from the Reactor Control System
    This class keeps the current state of the field and allows your program to query it at
@@ -45,8 +44,13 @@ class Messages {
     MessageType getMessageType();
     void setMessageType(Messages::MessageType type);
     bool isToMe();
+    byte getSupply();
+    byte getStorage();
   private:
+    byte supply;
+    byte storage;
+    unsigned int me;
+    unsigned int all;
     bool stopped;
-    LCDController lcdCtrl;
 };
 #endif /* MESSAGES_H_ */
